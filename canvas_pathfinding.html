@@ -9,40 +9,6 @@
 
 		<script>
 
-		    //node = function (point) {
-		        
-		    //    this.self = this;
-
-		    //    this.point = point;
-
-		    //    this.isVisited = false;
-		    //    this.neighbours = new Array();
-		    //    this.distance = 0;
-		    //    this.heuristicDistance = 900000;
-		    //    this.parent = null;
-		    //    this.priority = 0;
-
-		    //    //this.init = function (point) {
-		    //    //    self.point = point;
-		    //    //}
-
-		    //    this.addNeighbour = function (node) {
-		    //        this.neighbours.push(node);
-		    //    }
-
-		    //    this.getHash = function() {
-		    //        return this.point.x + "_" + this.point.y;
-		    //    }
-
-		    //    this.equals = function (otherNode) {
-		    //        return this.point.x === otherNode.point.x && this.point.y === otherNode.point.y;
-		    //    }
-
-		    //};
-
-
-
-
 		    var astar = new function () {
 
 		        this.Node = function(x, y, parent_index, g, h, f) {
@@ -127,8 +93,6 @@
 		                closed.push(current_node);
 			
 		                // Expand our current node (look in 4 directions)
-		                //for (var new_node_x = Math.max(0, current_node.x-1); new_node_x <= Math.min(columns-1, current_node.x+1); new_node_x++)
-		                //    for (var new_node_y = Math.max(0, current_node.y-1); new_node_y <= Math.min(rows-1, current_node.y+1); new_node_y++)
 		                for (var directionIdx = 0; directionIdx < this.directions.length; directionIdx++)
 		                {
 		                    var new_node_x = current_node.x + this.directions[directionIdx].x;
@@ -174,34 +138,6 @@
 
 		            return [];
 		        };
-
-
-		        //var addNeighbours = function (node, dictionary) {
-		        //    node.addNeighbour(getNode({ x: node.point.x + 1, y: node.point.y }, dictionary));
-		        //    node.addNeighbour(getNode({ x: node.point.x - 1, y: node.point.y }, dictionary));
-		        //    node.addNeighbour(getNode({ x: node.point.x, y: node.point.y + 1 }, dictionary));
-		        //    node.addNeighbour(getNode({ x: node.point.x, y: node.point.y - 1 }, dictionary));
-		        //};
-
-		        //var getNode = function (point, dictionary) {
-		        //    if (dictionary.containsKey(point.x + "_" + point.y)) {
-		        //        return dictionary.get(point.x + "_" + point.y);
-		        //    } else {
-		        //        return createNode(point, dictionary);
-		        //    }
-		        //};
-
-		        //var createNode = function (point, dictionary) {
-		        //    var node = new this.node(point);
-		        //    dictionary.set(node.getHash(), node);
-		        //    return node;
-		        //};
-
-
-		        //return {
-		        //    calculatePath: calculatePath
-		        //};
-
 		    }();
 
 		    var tilemap = function () {
