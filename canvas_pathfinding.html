@@ -1,0 +1,348 @@
+<html>
+	<head>
+		<title>Canvas test</title>
+	</head>
+	<body>
+		<canvas id="map" width="800" height="600" style="border: 1px solid"></canvas>
+		
+        <script src="buckets.js" ></script>
+
+		<script>
+
+		    //node = function (point) {
+		        
+		    //    this.self = this;
+
+		    //    this.point = point;
+
+		    //    this.isVisited = false;
+		    //    this.neighbours = new Array();
+		    //    this.distance = 0;
+		    //    this.heuristicDistance = 900000;
+		    //    this.parent = null;
+		    //    this.priority = 0;
+
+		    //    //this.init = function (point) {
+		    //    //    self.point = point;
+		    //    //}
+
+		    //    this.addNeighbour = function (node) {
+		    //        this.neighbours.push(node);
+		    //    }
+
+		    //    this.getHash = function() {
+		    //        return this.point.x + "_" + this.point.y;
+		    //    }
+
+		    //    this.equals = function (otherNode) {
+		    //        return this.point.x === otherNode.point.x && this.point.y === otherNode.point.y;
+		    //    }
+
+		    //};
+
+
+
+
+		    var astar = new function () {
+
+		        this.Node = function(x, y, parent_index, g, h, f) {
+		             		this.x = x;
+		             		this.y = y;
+		             		this.parent_index = parent_index;
+		             		this.g = g;
+		             		this.h = h;
+		             		this.f = f;
+		        }
+
+		        this.heuristic = function(current_node, destination_node) {
+		             		var x = current_node.x - destination_node.x;
+		             		var y = current_node.y - destination_node.y;
+		             		return x * x + y * y;
+		        }
+
+		        this.directions = [{x: -1, y: 0}, { x: 1, y: 0}, {x: 0, y: -1},{x: 0, y: 1}];
+
+		        this.calculatePath = function (tilemap, start, destination)
+		        {
+
+
+		            var columns = tilemap.width();
+		            var rows = tilemap.height();
+
+		            // Create start and destination as true nodes
+		            start = new this.Node(start.x, start.y, -1, -1, -1, -1);
+		            destination = new this.Node(destination.x, destination.y, -1, -1, -1, -1);
+		
+		            var open = []; // List of open nodes (nodes to be inspected)
+		            var closed = []; // List of closed nodes (nodes we've already inspected)
+		
+		            var g = 0; // Cost from start to current node
+		            var h = this.heuristic(start, destination); // Cost from current node to destination
+		            var f = g+h; // Cost from start to destination going through the current node
+		
+		            // Push the start node onto the list of open nodes
+		            open.push(start); 
+		
+		            //Keep going while there's nodes in our open list
+		            while (open.length > 0)
+		            {
+		                // Find the best open node (lowest f value)
+			
+		                // Alternately, you could simply keep the open list sorted by f value lowest to highest,
+		                // in which case you always use the first node
+		                var best_cost = open[0].f;
+		                var best_node = 0;
+			
+		                for (var i = 1; i < open.length; i++)
+		                {
+		                    if (open[i].f < best_cost)
+		                    {
+		                        best_cost = open[i].f;
+		                        best_node = i;
+		                    }
+		                }
+			
+		                // Set it as our current node
+		                var current_node = open[best_node];
+			
+		                // Check if we've reached our destination
+		                if (current_node.x == destination.x && current_node.y == destination.y)
+		                {
+		                    var path = [destination]; //Initialize the path with the destination node
+
+		                    // Go up the chain to recreate the path 
+		                    while (current_node.parent_index != -1)
+		                    {
+		                        current_node = closed[current_node.parent_index];
+		                        path.unshift(current_node);
+		                    }
+
+		                    return path;
+		                }
+			
+		                // Remove the current node from our open list
+		                open.splice(best_node, 1);
+			
+		                // Push it onto the closed list
+		                closed.push(current_node);
+			
+		                // Expand our current node (look in 4 directions)
+		                //for (var new_node_x = Math.max(0, current_node.x-1); new_node_x <= Math.min(columns-1, current_node.x+1); new_node_x++)
+		                //    for (var new_node_y = Math.max(0, current_node.y-1); new_node_y <= Math.min(rows-1, current_node.y+1); new_node_y++)
+		                for (var directionIdx = 0; directionIdx < this.directions.length; directionIdx++)
+		                {
+		                    var new_node_x = current_node.x + this.directions[directionIdx].x;
+		                    var new_node_y = current_node.y + this.directions[directionIdx].y;
+
+		                        if (tilemap.getCell(new_node_x,new_node_y).isWalkable // If the new node is open
+                                    || (destination.x == new_node_x && destination.y == new_node_y)) //or the new node is our destination
+		                        {
+		                            // See if the node is already in our closed list. If so, skip it.
+		                            var found_in_closed = false;
+		                            for (var i in closed)
+		                                if (closed[i].x == new_node_x && closed[i].y == new_node_y)
+		                                {
+		                                    found_in_closed = true;
+		                                    break;
+		                                }
+						
+		                            if (found_in_closed)
+		                                continue;
+						
+		                            // See if the node is in our open list. If not, use it.
+		                            var found_in_open = false;
+		                            for (var i in open)
+		                                if (open[i].x == new_node_x && open[i].y == new_node_y)
+		                                {
+		                                    found_in_open = true;
+		                                    break;
+		                                }
+						
+		                            if (!found_in_open)
+		                            {
+		                                var new_node = new this.Node(new_node_x, new_node_y, closed.length-1, -1, -1, -1);
+
+		                                new_node.g = current_node.g + Math.floor(Math.sqrt(Math.pow(new_node.x-current_node.x, 2)+Math.pow(new_node.y-current_node.y, 2)));
+		                                new_node.h = this.heuristic(new_node, destination);
+		                                new_node.f = new_node.g+new_node.h;
+
+		                                open.push(new_node);
+		                            }
+		                        }
+		                    }
+		            }
+
+		            return [];
+		        };
+
+
+		        //var addNeighbours = function (node, dictionary) {
+		        //    node.addNeighbour(getNode({ x: node.point.x + 1, y: node.point.y }, dictionary));
+		        //    node.addNeighbour(getNode({ x: node.point.x - 1, y: node.point.y }, dictionary));
+		        //    node.addNeighbour(getNode({ x: node.point.x, y: node.point.y + 1 }, dictionary));
+		        //    node.addNeighbour(getNode({ x: node.point.x, y: node.point.y - 1 }, dictionary));
+		        //};
+
+		        //var getNode = function (point, dictionary) {
+		        //    if (dictionary.containsKey(point.x + "_" + point.y)) {
+		        //        return dictionary.get(point.x + "_" + point.y);
+		        //    } else {
+		        //        return createNode(point, dictionary);
+		        //    }
+		        //};
+
+		        //var createNode = function (point, dictionary) {
+		        //    var node = new this.node(point);
+		        //    dictionary.set(node.getHash(), node);
+		        //    return node;
+		        //};
+
+
+		        //return {
+		        //    calculatePath: calculatePath
+		        //};
+
+		    }();
+
+		    var tilemap = function () {
+		        var self = this;
+
+		        var width;
+		        var height;
+		        var map;
+
+		        var init = function (width, height) {
+		            self.width = width;
+		            self.height = height;
+
+		            self.map = new Array(width);
+                    //init map
+		            for (var x = 0; x < width; x++) {
+		                self.map[x] = new Array(height);
+		                for (var y = 0; y < height; y++) {
+		                    self.map[x][y] = {
+                                isWalkable: true
+		                    }
+		                }
+		            }
+
+                    // mark borders as unwalkable
+		            for (var x = 0; x < width; x++) {
+		                self.map[x][0].isWalkable = false;
+		                self.map[x][height - 1].isWalkable = false;
+		            }
+		            for (var y = 0; y < height; y++) {
+		                self.map[0][y].isWalkable = false;
+		                self.map[width - 1][y].isWalkable = false;
+		            }
+
+		            for (var y = 0; y < height - 2; y++) {
+		                self.map[4][y].isWalkable = false;
+		                self.map[10][y].isWalkable = false;
+		            }
+		            for (var y = 2; y < height; y++) {
+		                self.map[7][y].isWalkable = false;
+		                self.map[13][y].isWalkable = false;
+		            }
+		        }
+
+		        var getCell = function(x, y) {
+		            return self.map[x][y];
+		        }
+
+		        return {
+		            width: function () { return self.width },
+		            height: function () { return self.height },
+		            getCell: getCell,
+		            init: init
+
+		        };
+
+		    }();
+
+		    var tilemapRenderer = function () {
+		        var self = this;
+
+		        var c = document.getElementById("map");
+		        var ctx = c.getContext("2d");
+
+		        var tileSize = 40;
+		        var pixelWidth;
+		        var pixelHeight;
+		        var tilemap;
+
+		        var init = function (tilemap) {
+		            tilemap = tilemap;
+		            pixelWidth = tilemap.width() * tileSize;
+		            pixelHeight = tilemap.height() * tileSize;
+		            c.width = pixelWidth;
+		            c.height = pixelHeight;
+		        }
+
+		        var drawMap = function () {
+		            drawCells();
+		            drawGrid();
+		        }
+
+		        var drawCells = function () {
+		            for (var x = 0; x < self.tilemap.width(); x++) {
+		                for (var y = 0; y < self.tilemap.height() ; y++) {
+		                    var cell = self.tilemap.getCell(x, y);
+		                    if (cell.isWalkable) {
+		                        ctx.fillStyle = "white";
+		                    } else {
+		                        ctx.fillStyle = "black";
+		                    }
+		                    ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+                        }
+
+		            }
+		        }
+
+		        var drawPath = function (path) {
+		            ctx.fillStyle = "#009900";
+		            for (var i = 0; i < path.length; i++) {
+		                ctx.fillRect(path[i].x * tileSize+1, path[i].y * tileSize+1, tileSize-2, tileSize-2);
+		                }
+		        }
+
+		        var drawGrid = function () {
+		            for (var x = 0; x < pixelWidth; x += tileSize) {
+		                ctx.moveTo(x, 0);
+		                ctx.lineTo(x, pixelHeight);
+		                ctx.stroke();
+		            }
+
+		            for (var y = 0; y < pixelHeight; y += tileSize) {
+		                ctx.moveTo(0, y);
+		                ctx.lineTo(pixelWidth, y);
+		                ctx.stroke();
+		            }
+		        }
+
+		        var drawStart = function (x, y) {
+		            ctx.fillStyle = "#00FF00";
+		            ctx.fillRect((x * tileSize) + 1, (y * tileSize) + 1, tileSize - 2, tileSize - 2);
+		        }
+
+		        return {
+                    init: init,
+		            drawMap: drawMap,
+		            drawStart: drawStart,
+		            drawPath: drawPath
+		        };
+		    }();
+
+		    tilemap.init(30, 20);
+
+		    tilemapRenderer.init(tilemap);
+
+		    tilemapRenderer.drawMap();
+//		    tilemapRenderer.drawStart(5, 9);
+
+		    path = astar.calculatePath(tilemap, { x: 3, y: 3 }, { x: 18, y: 10 });
+
+		    tilemapRenderer.drawPath(path);
+		</script>
+	</body>
+</html>
